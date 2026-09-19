@@ -109,3 +109,39 @@ rune   → int32 / Unicode code point
 ```
 
 A rune isn't necessarily a user-perceived "character"; a single visible character can consist of multiple Unicode code points.
+
+## Property accessibility in structs
+We dont have private/public
+We have exported and unexported
+```
+package main
+
+import "myapp/trie"
+
+func main() {
+    t := trie.New()
+    t.Remove("foo") // ✅ exported
+    t.remove("foo") // ❌ unexported
+}
+```
+lowercase → unexported/private to package
+Uppercase → exported/public
+
+Same for attributes as well
+
+## If else
+```
+func (node *Node) hasNode(topic string) bool {
+	/*
+		if <statement>; <condition> {
+			...
+		}
+		node.nodes[topic] gives val, existenceBool
+		so if exists
+	*/
+	if _, ok := node.nodes[topic]; ok {
+		return true
+	}
+	return false
+}
+```
