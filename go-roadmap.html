@@ -1,0 +1,508 @@
+<title>Go, Build by Build</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root {
+    --bg: #f4f6f7;
+    --panel: #ffffff;
+    --panel-2: #eef1f2;
+    --ink: #14201f;
+    --ink-soft: #4a5a5b;
+    --ink-faint: #7c8b8c;
+    --line: #dde3e4;
+    --line-strong: #c6d0d1;
+    --go: #00add8;
+    --go-deep: #007d9c;
+    --go-wash: #e2f5fb;
+    --amber: #cf8a00;
+    --amber-wash: #fbf1dc;
+    --done: #12a150;
+    --done-wash: #e2f3e9;
+    --shadow: 0 1px 2px rgba(20,32,31,.06), 0 8px 24px rgba(20,32,31,.05);
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    --body: 'Manrope', system-ui, -apple-system, sans-serif;
+    --display: 'Sora', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1413;
+      --panel: #151f1e;
+      --panel-2: #1c2827;
+      --ink: #e7edec;
+      --ink-soft: #a4b4b3;
+      --ink-faint: #728382;
+      --line: #253433;
+      --line-strong: #354947;
+      --go: #35c9ee;
+      --go-deep: #7fdcf3;
+      --go-wash: #10312f;
+      --amber: #e6b34d;
+      --amber-wash: #2c2410;
+      --done: #4bd486;
+      --done-wash: #113020;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1413;
+    --panel: #151f1e;
+    --panel-2: #1c2827;
+    --ink: #e7edec;
+    --ink-soft: #a4b4b3;
+    --ink-faint: #728382;
+    --line: #253433;
+    --line-strong: #354947;
+    --go: #35c9ee;
+    --go-deep: #7fdcf3;
+    --go-wash: #10312f;
+    --amber: #e6b34d;
+    --amber-wash: #2c2410;
+    --done: #4bd486;
+    --done-wash: #113020;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding-inline: 20px; padding-block: 0; }
+
+  /* ---- sticky progress bar ---- */
+  .bar {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 20;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .bar-inner {
+    max-width: 860px; margin: 0 auto;
+    padding: 12px 20px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .glyph {
+    font-family: var(--mono); font-weight: 700; font-size: 15px;
+    color: var(--go-deep); letter-spacing: -.5px; white-space: nowrap;
+  }
+  .glyph b { color: var(--ink); }
+  .track {
+    flex: 1; height: 8px; border-radius: 20px;
+    background: var(--panel-2); overflow: hidden; border: 1px solid var(--line);
+  }
+  .fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--go-deep), var(--go));
+    border-radius: 20px; transition: width .5s cubic-bezier(.2,.8,.2,1);
+  }
+  .pct {
+    font-family: var(--mono); font-size: 13px; font-weight: 700;
+    color: var(--ink); font-variant-numeric: tabular-nums; min-width: 40px; text-align: right;
+  }
+  .reset {
+    font-family: var(--mono); font-size: 11px; color: var(--ink-faint);
+    background: none; border: 1px solid var(--line); border-radius: 6px;
+    padding: 4px 8px; cursor: pointer;
+  }
+  .reset:hover { color: var(--ink); border-color: var(--line-strong); }
+
+  /* ---- hero ---- */
+  header.hero { padding-block: 46px 30px; }
+  .kicker {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--go-deep); font-weight: 700; margin-bottom: 14px;
+  }
+  h1 {
+    font-family: var(--display); font-weight: 700; font-size: clamp(32px, 6vw, 50px);
+    line-height: 1.02; letter-spacing: -1.5px; margin: 0 0 18px; text-wrap: balance;
+  }
+  h1 .u { color: var(--go-deep); }
+  .lede { font-size: 17px; color: var(--ink-soft); max-width: 60ch; margin: 0; }
+  .rules {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px;
+  }
+  .rule {
+    font-family: var(--mono); font-size: 12px; color: var(--ink-soft);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 20px;
+    padding: 6px 12px; display: inline-flex; gap: 7px; align-items: center;
+  }
+  .rule::before { content: "→"; color: var(--go-deep); font-weight: 700; }
+
+  /* ---- module ---- */
+  .modules { display: flex; flex-direction: column; gap: 18px; padding-bottom: 40px; }
+  .mod {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    box-shadow: var(--shadow); overflow: hidden; scroll-margin-top: 80px;
+    transition: border-color .2s;
+  }
+  .mod.done { border-color: color-mix(in srgb, var(--done) 45%, var(--line)); }
+  .mod-head {
+    display: flex; align-items: flex-start; gap: 16px; padding: 20px 22px 16px;
+    cursor: pointer; user-select: none;
+  }
+  .num {
+    flex: none; width: 46px; height: 46px; border-radius: 12px;
+    background: var(--go-wash); color: var(--go-deep);
+    font-family: var(--mono); font-weight: 700; font-size: 17px;
+    display: grid; place-items: center; letter-spacing: -1px;
+  }
+  .mod.done .num { background: var(--done-wash); color: var(--done); }
+  .mod-titles { flex: 1; min-width: 0; }
+  .mod-titles h2 {
+    font-family: var(--display); font-weight: 600; font-size: 20px;
+    margin: 2px 0 3px; letter-spacing: -.4px;
+  }
+  .mod-sub { font-size: 13.5px; color: var(--ink-faint); font-family: var(--mono); }
+  .badge {
+    font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .8px;
+    text-transform: uppercase; padding: 3px 7px; border-radius: 5px;
+    margin-left: 9px; vertical-align: 3px; white-space: nowrap;
+  }
+  .badge.now { background: var(--go-deep); color: #fff; }
+  .badge.did { background: var(--done-wash); color: var(--done); border: 1px solid color-mix(in srgb, var(--done) 35%, transparent); }
+  .from {
+    font-size: 14px; color: var(--ink-soft); line-height: 1.5;
+    border-left: 3px solid var(--line-strong); padding: 2px 0 2px 13px; margin-top: 4px;
+  }
+  .file {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0;
+    text-transform: none; color: var(--go-deep); background: var(--panel);
+    border: 1px solid color-mix(in srgb, var(--go) 30%, var(--line));
+    padding: 2px 7px; border-radius: 5px; margin-left: auto;
+  }
+  .chev { flex: none; color: var(--ink-faint); margin-top: 10px; transition: transform .25s; }
+  .mod.open .chev { transform: rotate(180deg); }
+
+  .mod-body { display: none; padding: 0 22px 22px; }
+  .mod.open .mod-body { display: block; }
+
+  .section-label {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 700; margin: 18px 0 10px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip {
+    font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft);
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px;
+    padding: 5px 9px;
+  }
+
+  .build {
+    margin-top: 18px; border: 1px solid color-mix(in srgb, var(--go) 30%, var(--line));
+    background: var(--go-wash); border-radius: 12px; padding: 16px 18px;
+  }
+  .build-tag {
+    font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--go-deep); display: flex; align-items: center; gap: 8px;
+  }
+  .build-tag::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--go); }
+  .build h3 { font-family: var(--display); font-size: 17px; font-weight: 600; margin: 8px 0 6px; letter-spacing: -.3px; }
+  .build p { margin: 0; font-size: 14.5px; color: var(--ink-soft); }
+  .build ul { margin: 10px 0 0; padding-left: 18px; font-size: 14px; color: var(--ink-soft); }
+  .build ul li { margin-bottom: 4px; }
+  .build ul li::marker { color: var(--go-deep); }
+
+  .check {
+    margin-top: 16px; padding: 14px 16px; border-radius: 10px;
+    background: var(--amber-wash); border: 1px solid color-mix(in srgb, var(--amber) 30%, var(--line));
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  .check b { color: var(--ink); font-weight: 600; }
+
+  .done-toggle {
+    margin-top: 18px; display: flex; align-items: center; gap: 11px;
+    font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--ink-soft);
+    cursor: pointer; user-select: none; width: fit-content;
+  }
+  .box {
+    width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--line-strong);
+    display: grid; place-items: center; flex: none; transition: all .18s;
+  }
+  .box svg { opacity: 0; transform: scale(.5); transition: all .18s; color: #fff; }
+  .done-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+  .done-toggle input:checked + .box { background: var(--done); border-color: var(--done); }
+  .done-toggle input:checked + .box svg { opacity: 1; transform: scale(1); }
+  .done-toggle input:focus-visible + .box { outline: 2px solid var(--go); outline-offset: 2px; }
+  .done-toggle:has(input:checked) { color: var(--done); }
+
+  footer {
+    border-top: 1px solid var(--line); padding-block: 28px 48px;
+    font-size: 13px; color: var(--ink-faint); text-align: center; line-height: 1.7;
+  }
+  footer code {
+    font-family: var(--mono); background: var(--panel-2); padding: 2px 6px;
+    border-radius: 5px; color: var(--go-deep); font-size: 12px;
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="bar">
+  <div class="bar-inner">
+    <span class="glyph">go<b>//</b> <span id="count">0/10</span></span>
+    <div class="track"><div class="fill" id="fill"></div></div>
+    <span class="pct" id="pct">0%</span>
+    <button class="reset" id="reset">reset</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="kicker">From slices to a working broker</div>
+    <h1>Your four Go files, <span class="u">in order</span>.</h1>
+    <p class="lede">You already have slices, pointers, and UTF-8 down (main.go, readme.md). This path is the dependency chain from there to the four stubs sitting empty in your repo — the trie matcher, the promise, the job queue, the server — then wires them into one broker. Each module names the concept, translates it from the OOP/JS world you're coming from, and points at the exact file you'll write.</p>
+    <div class="rules">
+      <span class="rule">Build your real stubs, not toys</span>
+      <span class="rule">Test the edge cases as you go</span>
+      <span class="rule">Stdlib only — no frameworks</span>
+      <span class="rule">Read errors out loud</span>
+    </div>
+  </header>
+
+  <div class="modules" id="modules"></div>
+
+  <footer>
+    Everything here runs on the standard library alone — no dependencies to install past Go itself.<br>
+    Start each project with <code>go mod init example/name</code> and run it with <code>go run .</code><br>
+    Progress is saved in this browser only.
+  </footer>
+</div>
+
+<script>
+const DATA = [
+  {
+    n: "00", title: "Value & Reference Semantics",
+    sub: "pass-by-value · slice headers · closures",
+    status: "done",
+    from: "In JS everything non-primitive is a reference. In Go everything is copied — but a slice/map/pointer copies a small header that still points at shared data. That distinction is the whole game.",
+    learn: ["pass-by-value", "slice header (ptr/len/cap)", "append reallocation", "pointers & &/*", "closures", "variadic funcs"],
+    file: "main.go",
+    build: {
+      name: "Slice, pointer & closure playground",
+      desc: "You already wrote this. main.go exercises append reallocation, pointer mutation of a slice, a variadic sum, and a closure counter — that IS this module.",
+      steps: ["append that does vs doesn't realloc (watch cap)", "mutate the caller's slice via *[]int", "a closure that captures i by reference"]
+    },
+    check: "You can predict when append shares vs copies the backing array — you proved it in main.go."
+  },
+  {
+    n: "01", title: "Strings, Bytes & Runes",
+    sub: "string · byte · rune · UTF-8",
+    status: "done",
+    from: "A JS string indexes by UTF-16 code unit. A Go string is immutable UTF-8 bytes; index it and you get a byte, range it and you get runes. Topic strings are ASCII, so this rarely bites — but know why.",
+    learn: ["string = immutable bytes", "byte = uint8", "rune = int32 code point", "range over runes", "[]rune vs len()", "strings package"],
+    file: "readme.md",
+    build: {
+      name: "Bytes/runes notes",
+      desc: "Covered in your readme.md — len(bytes) vs len([]rune), ranging over runes, the UTF-8 model. Done.",
+      steps: ["len(s) counts bytes, not characters", "for i,r := range s walks runes", "strings.Split is your topic tokenizer"]
+    },
+    check: "You know why len(\"你好\") is 6, and that strings.Split(topic, \"/\") gives you levels."
+  },
+  {
+    n: "02", title: "Structs, Methods & Pointers",
+    sub: "struct · receiver · constructor",
+    from: "This is your class. A struct is the fields; a method attaches with a receiver — `func (t *TrieStore) Insert(...)` — and that `t` is your `this`. Pointer receiver = mutate; value receiver = copy. `NewX()` is Go's constructor convention.",
+    learn: ["struct types & literals", "methods & receivers", "value vs pointer receivers", "self-referential structs (*node)", "NewX() constructor pattern"],
+    file: "mqtt-trie-store.go — part 1",
+    build: {
+      name: "The trie node + TrieStore skeleton",
+      desc: "Lay the types down before any algorithm. A node points to its children (a recursive struct); the store holds the root and the methods hang off it.",
+      steps: ["type node struct { children map[string]*node; subs []string }", "type TrieStore struct { root *node }", "NewTrieStore() and newNode() constructors", "Insert(filter string): split on '/', walk/create children, append the filter at the leaf"]
+    },
+    check: "You translated `class TrieStore` into a struct + pointer-receiver methods, and Insert builds the tree correctly."
+  },
+  {
+    n: "03", title: "Maps, Recursion & the Match",
+    sub: "map · comma-ok · recursion",
+    status: "now",
+    from: "The algorithm needs no class at all — it's a recursive function over nodes. `child, ok := m[level]` (comma-ok) is your `if (level in obj)`. Wildcards branch the recursion: exact, then `+`, then `#`.",
+    learn: ["map[string]*node lookups", "the comma-ok idiom", "strings.Split → []string levels", "recursion over the trie", "collecting into a []string result"],
+    file: "mqtt-trie-store.go — the point of it all",
+    build: {
+      name: "TrieStore.Match — the MQTT matcher",
+      desc: "The file you're on now. Match a concrete publish topic against stored subscription filters, honoring the wildcards. Recursion makes + and # clean; loops make them painful.",
+      steps: ["Match(topic): split into levels, recurse from root", "exact child → recurse on the rest of the levels", "'+' child → recurse on the rest (single level)", "'#' child → collect its subs and stop (matches everything remaining)", "levels empty → collect this node's subs AND any '#' child (# matches zero levels)"]
+    },
+    check: "sport/+/player1 matches sport/tennis/player1 but not …/ranking; sport/# matches both sport and sport/tennis/player1. All green in tests."
+  },
+  {
+    n: "04", title: "Interfaces & Errors",
+    sub: "interface · error · errors.Is/%w",
+    from: "Duck typing, but verified at compile time — no `implements`, having the methods is enough. Errors aren't thrown; they're returned values you check. `fmt.Errorf(\"...: %w\", err)` is your error cause chain.",
+    learn: ["interface types", "implicit satisfaction", "any & type switch", "the error interface", "fmt.Errorf + %w wrapping", "errors.Is / errors.As"],
+    file: "mqtt-trie-store.go — generalize it",
+    build: {
+      name: "A payload interface + real validation errors",
+      desc: "Stop storing plain filter strings; store an interface so any subscriber payload fits. Reject malformed filters (# not last, empty levels) with wrapped errors instead of silent bugs.",
+      steps: ["Store subscribers behind a small interface (or any)", "Return ErrInvalidFilter, wrapped with context via %w", "Validate: '#' only as the final level, no empty '+' misuse", "Callers use errors.Is to detect the specific failure"]
+    },
+    check: "Your store rejects a bad filter with a checkable error, and holds arbitrary subscriber data through an interface."
+  },
+  {
+    n: "05", title: "Goroutines & Channels",
+    sub: "go · chan · <- · sync",
+    from: "A goroutine is an async task, but far cheaper than a Promise — you spawn thousands. A channel is the typed pipe you `await` on. This is literally how you build a Promise in Go.",
+    learn: ["goroutines with go", "channels (buffered & unbuffered)", "send/receive blocking", "closing & ranging channels", "sync.WaitGroup", "sync.Mutex"],
+    file: "promise.go",
+    build: {
+      name: "A Future/Promise type",
+      desc: "Kick off work in a goroutine and hand the caller something to await. This is your promise.go — Go doesn't ship one, so you feel exactly what a Promise is underneath.",
+      steps: ["type Future[T any] struct { done chan T }", "New(fn func() T) runs fn in a goroutine, sends result on the channel", "Await() blocks on <-f.done and caches the result", "Guard the trie with a sync.Mutex once goroutines touch it concurrently"]
+    },
+    check: "You can explain why an unbuffered send blocks until someone receives — and your Await() returns the computed value once."
+  },
+  {
+    n: "06", title: "select, context & Worker Pools",
+    sub: "select · context · fan-out",
+    from: "`select` is Promise.race over channels. `context.Context` is your AbortController / cancellation token, passed down the call tree. A worker pool is a fixed set of goroutines pulling from one channel.",
+    learn: ["select over multiple channels", "context.WithCancel / WithTimeout", "the worker-pool pattern", "fan-out / fan-in", "graceful shutdown", "buffered job channels"],
+    file: "job-queue.go",
+    build: {
+      name: "A bounded job queue",
+      desc: "N workers pull jobs off a channel and process them concurrently, with clean cancellation. This is job-queue.go — the backpressure primitive behind every real service.",
+      steps: ["jobs := make(chan Job, size); spawn N worker goroutines ranging over it", "select on jobs vs ctx.Done() so workers stop on cancel", "WaitGroup to drain in-flight jobs before exit", "Submit returns a Future (from module 05) for each job's result"]
+    },
+    check: "You can bound concurrency to N, cancel the whole pool with one context, and shut down without dropping in-flight jobs."
+  },
+  {
+    n: "07", title: "net/http as the Framework",
+    sub: "ServeMux · Handler · middleware",
+    from: "No Express. The stdlib IS the framework: ServeMux is your router, http.HandlerFunc your handler, and middleware is just a handler that wraps another handler. No decorators, no magic.",
+    learn: ["http.Server & ServeMux", "http.HandlerFunc", "routing by path & method", "reading JSON bodies / query params", "writing JSON + status codes", "middleware (handler wrapping)"],
+    file: "http-server.go",
+    build: {
+      name: "An HTTP front door for the broker",
+      desc: "Expose your store over HTTP: POST /subscribe registers a filter, POST /publish sends a topic+payload and returns who matched. This is http-server.go — the edge of your system.",
+      steps: ["Register /subscribe and /publish on a ServeMux", "Decode JSON bodies into structs, encode JSON responses", "/publish calls TrieStore.Match and returns the matched subscribers", "Wrap every handler in a logging + recovery middleware"]
+    },
+    check: "You can route two methods, round-trip JSON, and explain a middleware as just func(Handler) Handler."
+  },
+  {
+    n: "08", title: "Testing & Generics",
+    sub: "go test · table tests · [T any]",
+    from: "Tests live beside the code in *_test.go and run with `go test` — no runner to install. Generics (`[T any]`) are TypeScript's <T>, added in Go 1.18: one Future, one store, many payload types.",
+    learn: ["testing package & go test", "table-driven tests", "t.Run subtests", "go test -cover", "generics & type parameters", "type constraints (any, comparable)"],
+    file: "mqtt-trie-store_test.go",
+    build: {
+      name: "Lock down the matcher, then make it generic",
+      desc: "The matcher's whole value is its edge cases, so pin them with tests. Then make TrieStore generic over its payload type so it's reusable.",
+      steps: ["Table of {filter, topic, wantMatch} cases", "Cover the traps: # matches parent, + doesn't span /, leading /", "go test -cover and push the number up", "TrieStore[T any] so subscribers can be any type"]
+    },
+    check: "You can write a table-driven test from scratch, and your trie's # and + cases are all covered and green."
+  },
+  {
+    n: "09", title: "Capstone: Wire the Four Files",
+    sub: "everything, together",
+    from: "Now the stubs stop being isolated exercises and become one program — the point you were building toward all along.",
+    learn: ["package/project layout", "composing the four primitives", "graceful shutdown (signal + context)", "config via flags/env", "a README to run it"],
+    file: "all four + a main that assembles them",
+    build: {
+      name: "A minimal MQTT-style broker",
+      desc: "http-server.go ingests publishes → job-queue.go workers process them → each Match's against mqtt-trie-store.go → results delivered via promise.go patterns. Small, but every module earns its place.",
+      steps: ["Server accepts publishes and enqueues them as jobs", "Workers Match each topic and fan out to matched subscribers", "Concurrency guarded (Mutex) and bounded (pool)", "Ctrl-C triggers graceful shutdown via context", "Tests for the core + a README that runs the whole thing"]
+    },
+    check: "You built a running broker that uses goroutines, channels, interfaces, the trie, and your own tests together — something you'd actually show someone."
+  }
+];
+
+const TOTAL = DATA.length;
+const KEY = "go-roadmap-progress-v2";
+let done = {};
+let seeded = false;
+try {
+  const raw = localStorage.getItem(KEY);
+  if (raw) { done = JSON.parse(raw) || {}; }
+  else {
+    // first visit: seed the modules the repo shows are already done
+    DATA.forEach((m, i) => { if (m.status === "done") done[i] = true; });
+    seeded = true;
+  }
+} catch (e) { done = {}; }
+
+const CHECK_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+const CHEV = '<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+
+const modules = document.getElementById('modules');
+
+DATA.forEach((m, i) => {
+  const el = document.createElement('section');
+  el.className = 'mod' + (done[i] ? ' done' : '') + (m.status === 'now' ? ' open' : '');
+  el.id = 'm' + i;
+  const badge = m.status === 'now'
+    ? '<span class="badge now">you are here</span>'
+    : m.status === 'done'
+      ? '<span class="badge did">done in your repo</span>'
+      : '';
+  el.innerHTML = `
+    <div class="mod-head" data-i="${i}">
+      <div class="num">${m.n}</div>
+      <div class="mod-titles">
+        <h2>${m.title}${badge}</h2>
+        <div class="mod-sub">${m.sub}</div>
+      </div>
+      ${CHEV}
+    </div>
+    <div class="mod-body">
+      <div class="from">${m.from}</div>
+      <div class="section-label">Concepts to learn</div>
+      <div class="chips">${m.learn.map(c => `<span class="chip">${c}</span>`).join('')}</div>
+      <div class="build">
+        <div class="build-tag">Build this<span class="file">${m.file}</span></div>
+        <h3>${m.build.name}</h3>
+        <p>${m.build.desc}</p>
+        <ul>${m.build.steps.map(s => `<li>${s}</li>`).join('')}</ul>
+      </div>
+      <div class="check">✓ You know it when: ${m.check}</div>
+      <label class="done-toggle">
+        <input type="checkbox" id="chk${i}" ${done[i] ? 'checked' : ''}>
+        <span class="box">${CHECK_SVG}</span>
+        <span>Mark module ${m.n} complete</span>
+      </label>
+    </div>`;
+  modules.appendChild(el);
+});
+
+// toggle open/close on header
+document.querySelectorAll('.mod-head').forEach(h => {
+  h.addEventListener('click', () => h.parentElement.classList.toggle('open'));
+});
+
+// checkbox handling
+DATA.forEach((m, i) => {
+  const chk = document.getElementById('chk' + i);
+  chk.addEventListener('click', e => e.stopPropagation());
+  chk.addEventListener('change', () => {
+    done[i] = chk.checked;
+    document.getElementById('m' + i).classList.toggle('done', chk.checked);
+    save(); render();
+  });
+});
+
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (e) {}
+}
+
+if (seeded) save();
+
+function render() {
+  const count = Object.values(done).filter(Boolean).length;
+  const pct = Math.round((count / TOTAL) * 100);
+  document.getElementById('fill').style.width = pct + '%';
+  document.getElementById('pct').textContent = pct + '%';
+  document.getElementById('count').textContent = count + '/' + TOTAL;
+}
+
+document.getElementById('reset').addEventListener('click', () => {
+  done = {}; save(); render();
+  document.querySelectorAll('.mod').forEach((el, i) => {
+    el.classList.remove('done');
+    const c = document.getElementById('chk' + i); if (c) c.checked = false;
+  });
+});
+
+render();
+</script>
