@@ -27,14 +27,6 @@ func sendThenReport(id int, channel chan string) {
 	fmt.Println("  process", id, "finished sending")
 }
 
-// demoChannelBuffering runs the same two senders against a channel of the
-// given capacity, deliberately delaying the receives so we can watch WHEN
-// each sender is allowed to continue.
-//
-//	capacity 0 (unbuffered): senders park mid-send; "finished sending" prints
-//	                         only AFTER main starts receiving.
-//	capacity 2 (buffered)  : senders drop values in the buffer and finish
-//	                         immediately, well before main receives.
 func demoChannelBuffering(capacity int) {
 	fmt.Printf("--- channel capacity %d ---\n", capacity)
 	channel := make(chan string, capacity)

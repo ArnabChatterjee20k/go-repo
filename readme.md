@@ -193,3 +193,12 @@ func (node *Node) hasNode(topic string) bool {
 	return false
 }
 ```
+
+## Channel direction (<-chan vs chan<-)
+```
+func pong(pings <-chan string, pongs chan<- string) {
+    msg := <-pings
+    pongs <- msg
+}
+```
+The pong function accepts one channel for receives (pings) and a second for sends (pongs).
