@@ -129,6 +129,54 @@ Uppercase → exported/public
 
 Same for attributes as well
 
+## Go: Channels (Buffered vs Unbuffered)
+
+In unbuffered channels they are adding to the channel only if there is a receiver, as cap stays zero (no slot to store in — the value is handed straight to the receiver). Buffered channels have slots, so a sender can drop the value and continue.
+
+```go
+func sendThenReport(id int, channel chan string) {
+	channel <- strconv.Itoa(id)
+	fmt.Println("  process", id, "finished sending")
+}
+
+func demoChannelBuffering(capacity int) {
+	fmt.Printf("--- channel capacity %d ---\n", capacity)
+	channel := make(chan string, capacity)
+	go sendThenReport(1, channel)
+	go sendThenReport(2, channel)
+
+	time.Sleep(500 * time.Millisecond) // deliberately do NOT receive yet
+	fmt.Println("  main woke up, now receiving")
+	fmt.Println("  got:", <-channel)
+	fmt.Println("  got:", <-channel)
+}
+
+demoChannelBuffering(0) // unbuffered
+demoChannelBuffering(2) // buffered
+```
+
+Output:
+
+```text
+--- channel capacity 0 ---
+  main woke up, now receiving   ← receives happen FIRST
+  got: 2
+  got: 1
+  process 1 finished sending    ← senders only finish AFTER a receiver arrives
+  process 2 finished sending
+
+--- channel capacity 2 ---
+  process 2 finished sending    ← senders finish IMMEDIATELY (dropped in buffer)
+  process 1 finished sending
+  main woke up, now receiving
+  got: 2
+  got: 1
+```
+
+* **cap 0 (unbuffered)** → meeting point; send waits for a receiver.
+* **cap > 0 (buffered)** → mailbox with N slots; send drops the value and continues until full.
+* A **closed** channel never blocks a receiver — `close(done)` broadcasts "done" to all waiters (the basis of a settled Promise/Future).
+
 ## If else
 ```
 func (node *Node) hasNode(topic string) bool {
