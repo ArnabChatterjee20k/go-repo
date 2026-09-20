@@ -6,8 +6,6 @@ import (
 	"time"
 )
 
-// TODO: A promise like js with options for running multiple promises with allsettled, race with rate limiting on the number of executions
-
 type PromiseCallback func(resolve func(any), reject func(error))
 type Callback func(any) (any, error)
 
@@ -22,6 +20,11 @@ type Promise struct {
 
 type Promises struct{}
 
+type Result struct {
+	value any
+	err   error
+}
+
 func (promises *Promises) New(cb PromiseCallback) *Promise {
 	promise := &Promise{fulfilled: make(chan struct{})}
 	go cb(
@@ -35,6 +38,46 @@ func (promises *Promises) New(cb PromiseCallback) *Promise {
 		},
 	)
 	return promise
+}
+
+func (promises *Promises) AllSettled(batch int, promiseFactory ...func() *Promise) *Promise {
+	return promises.New(func(resolve func(any), reject func(error)) {
+		results := make([]Result, len(promiseFactory))
+		var wg sync.WaitGroup
+		semaphore := make(chan struct{}, batch)
+		wg.Add(len(promiseFactory))
+		for i, promiseFunc := range promiseFactory {
+			semaphore <- struct{}{}
+			go func() {
+				defer wg.Done()
+				// defer can only be used with function call only
+				defer func() { <-semaphore }()
+				result, err := promiseFunc().Await()
+				// no mutex needed as the results are created with the length of the promises only and get to their own index slot only
+				results[i] = Result{value: result, err: err}
+			}()
+		}
+		wg.Wait()
+		// we dont need close as no one is reading it yet and wait group already settling the concurrency completion
+		// close(semaphore)
+		resolve(results)
+	})
+}
+
+func (promises *Promises) Race(promiseArray ...*Promise) *Promise {
+	return promises.New(func(resolve func(any), reject func(error)) {
+		// resolve, reject already having the settle with once. so the goroutine calling either of them returns the promise
+		for _, promiseFunc := range promiseArray {
+			go func() {
+				result, err := promiseFunc.Await()
+				if err != nil {
+					reject(err)
+				} else {
+					resolve(result)
+				}
+			}()
+		}
+	})
 }
 
 func (promise *Promise) Then(cb Callback) *Promise {
