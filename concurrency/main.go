@@ -20,6 +20,38 @@ func syncGoRoutinesWithChannels() {
 	fmt.Println(<-channel)
 }
 
+func goroutineWithIndividualChannel() {
+	c1 := make(chan string)
+	c2 := make(chan string)
+	go func() {
+		time.Sleep(1 * time.Second)
+		c1 <- "one"
+	}()
+	go func() {
+		time.Sleep(2 * time.Second)
+		c2 <- "two"
+	}()
+	/*
+		Here whenever out of msg1 and msg2 comes it will print and exit
+		select {
+			case msg1 := <-c1:
+				fmt.Println("received", msg1)
+			case msg2 := <-c2:
+				fmt.Println("received", msg2)
+		}
+	*/
+	// It will wait for both. Normally select works whenever any case evaluates true
+	// at first 1, any of msg1 and msg2 resolves and then in second iteration the other one would be resolved as the first one already consumed the channel
+	for range 2 {
+		select {
+		case msg1 := <-c1:
+			fmt.Println("received", msg1)
+		case msg2 := <-c2:
+			fmt.Println("received", msg2)
+		}
+	}
+}
+
 // sendThenReport sends its id, then announces it finished sending.
 // Whether "finished sending" prints early or late reveals if the send blocked.
 func sendThenReport(id int, channel chan string) {
