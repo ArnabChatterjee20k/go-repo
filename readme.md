@@ -220,6 +220,15 @@ Rule of thumb (the Go proverb): *don't communicate by sharing memory; share memo
 
 > The `Future` uses both: `close(done)` (channel) broadcasts "result ready" to every `Await()`; a `sync.Once`/mutex makes sure `Resolve`/`Reject` settles **exactly once** — a channel can't enforce "only the first settle wins."
 
+### Race detection
+
+Run your tests with `go test -race`, or your program with `go run -race`, to use the built-in race detector — it flags unsynchronized access to shared memory.
+
+```sh
+go run -race ./concurrency
+go test -race ./...
+```
+
 ## If else
 ```
 func (node *Node) hasNode(topic string) bool {
