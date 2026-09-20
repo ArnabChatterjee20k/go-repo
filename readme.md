@@ -177,6 +177,49 @@ Output:
 * **cap > 0 (buffered)** → mailbox with N slots; send drops the value and continues until full.
 * A **closed** channel never blocks a receiver — `close(done)` broadcasts "done" to all waiters (the basis of a settled Promise/Future).
 
+## If channels sync, why WaitGroup / Mutex / Once?
+
+Channels sync **communication** — passing a value from one goroutine to another; the sync is a side effect of the handoff. `sync` primitives coordinate goroutines that **share** something, where no value moves — you're just waiting or guarding.
+
+| You want to... | Use |
+|---|---|
+| Pass a value / result between goroutines | **channel** |
+| Wait for N goroutines to finish | **WaitGroup** |
+| Guard shared state (counter, map, struct) | **Mutex** |
+| Run init exactly once | **Once** |
+| Signal "done" / broadcast to many | **closed channel** |
+
+**WaitGroup** — "wait for N to finish" without caring about their values. With a channel you'd have to know the count and receive exactly N times; WaitGroup states the intent:
+
+```go
+var wg sync.WaitGroup
+for i := 0; i < 100; i++ {
+	wg.Add(1)
+	go func() { defer wg.Done(); work() }()
+}
+wg.Wait() // blocks until all Done() called
+```
+
+**Mutex** — guard shared memory. Funneling every write through a channel to one owner is a lot of machinery to protect one variable:
+
+```go
+var mu sync.Mutex
+mu.Lock()
+count++
+mu.Unlock()
+```
+
+**Once** — run something exactly once no matter how many goroutines hit it:
+
+```go
+var once sync.Once
+once.Do(func() { conn = connect() }) // runs once; others wait
+```
+
+Rule of thumb (the Go proverb): *don't communicate by sharing memory; share memory by communicating* — **but** reach for a mutex when it's simpler. Channels move ownership; `sync` guards state and counts completions.
+
+> The `Future` uses both: `close(done)` (channel) broadcasts "result ready" to every `Await()`; a `sync.Once`/mutex makes sure `Resolve`/`Reject` settles **exactly once** — a channel can't enforce "only the first settle wins."
+
 ## If else
 ```
 func (node *Node) hasNode(topic string) bool {
