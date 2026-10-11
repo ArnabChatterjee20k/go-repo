@@ -3,7 +3,11 @@ and http://nil.csail.mit.edu/6.5840/2025/schedule.html
 lec2 -> threads and rpc
 
 Good part how we start from the serial workers to a shared map to a channel based workers taking the critical map out of the concurrent worker
+The idea is 
+lock for state/transitions
+and channel for communication
 
+But we can channel to turn someting into an event driven architecture as well taking the shared storage in the master outside of the concurrent workers
 
 6.5840 2025 Lecture 2: Threads and RPC
 
