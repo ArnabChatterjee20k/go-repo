@@ -115,23 +115,21 @@ func (crawler *Crawler) Crawl(url string) {
 	go func() {
 		crawler.urls <- []string{url}
 	}()
-	urlToProcess := 1
+	pending := 1
 
 	for {
+		if pending == 0 {
+			break
+		}
 		urlsToCrawl := <-crawler.urls
+		pending--
 		for _, url := range urlsToCrawl {
 			if crawler.seen[url] == false {
 				crawler.count++
 				crawler.seen[url] = true
 				go crawler.spawn(url)
-				urlToProcess++
+				pending++
 			}
-		}
-		// urls still to process
-		urlToProcess--
-
-		if urlToProcess == 0 {
-			break
 		}
 	}
 }
